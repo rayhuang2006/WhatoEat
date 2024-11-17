@@ -7,15 +7,9 @@
 
 import SwiftUI
 
-struct Store: Identifiable {
-    let id = UUID()
-    let name: String
-    let description: String
-}
-
 struct ContentView: View {
     @State private var stores: [Store] = []
-    @State private var selectedIndex: Int = 1
+    @State private var selectedIndex: Int = 1 // 起始位置設置為第一個實際數據
     @State private var isRandomizing: Bool = false
 
     var body: some View {
@@ -33,9 +27,8 @@ struct ContentView: View {
                     }
                 }
                 .tabViewStyle(PageTabViewStyle())
-                .animation(.easeInOut(duration: 0.5), value: selectedIndex)
                 .onChange(of: selectedIndex) {
-                    handleInfiniteScrolling(for: selectedIndex)
+                    handleInfiniteScrolling()
                 }
 
                 Button(action: randomizeCard) {
@@ -58,36 +51,46 @@ struct ContentView: View {
         }
     }
 
-    private func handleInfiniteScrolling(for index: Int) {
-        if index == 0 {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                selectedIndex = stores.count - 2
-            }
-        } else if index == stores.count - 1 {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                selectedIndex = 1
+    /// 處理無限滑動
+    private func handleInfiniteScrolling() {
+        if !isRandomizing { // 如果不是隨機模式，進行無動畫的跳轉
+            if selectedIndex == 0 { // 滑到最前的複製元素
+                DispatchQueue.main.async {
+                    withAnimation(.none) {
+                        selectedIndex = stores.count - 2
+                    }
+                }
+            } else if selectedIndex == stores.count - 1 { // 滑到最後的複製元素
+                DispatchQueue.main.async {
+                    withAnimation(.none) {
+                        selectedIndex = 1
+                    }
+                }
             }
         }
     }
 
-
+    /// 創建無限循環的數據列表
     private func createInfiniteStores(from originalStores: [Store]) -> [Store] {
         guard !originalStores.isEmpty else { return [] }
         var infiniteStores = originalStores
-        infiniteStores.insert(originalStores.last!, at: 0)
-        infiniteStores.append(originalStores.first!)
+        infiniteStores.insert(originalStores.last!, at: 0) // 頭部添加最後一個
+        infiniteStores.append(originalStores.first!) // 尾部添加第一個
         return infiniteStores
     }
 
+    /// 隨機選擇一張名片
     private func randomizeCard() {
         guard !stores.isEmpty else { return }
         isRandomizing = true
         let totalSteps = 6 // 定義動畫步數
         var step = 0
-        
+
         Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in
             if step < totalSteps {
-                selectedIndex = Int.random(in: 1..<(stores.count - 1))
+                withAnimation(.easeInOut(duration: 0.5)) { // 隨機時啟用動畫
+                    selectedIndex = Int.random(in: 1..<(stores.count - 1))
+                }
                 step += 1
             } else {
                 timer.invalidate()
@@ -97,13 +100,14 @@ struct ContentView: View {
     }
 }
 
-
+// 卡片 View
 struct StoreCard: View {
     let store: Store
     @State private var isFlipped: Bool = false
 
     var body: some View {
         ZStack {
+            // 正面
             VStack {
                 Text(store.name)
                     .font(.title)
@@ -114,7 +118,7 @@ struct StoreCard: View {
             .background(Color.white)
             .cornerRadius(20)
             .shadow(radius: 10)
-            .opacity(isFlipped ? 0 : 1)
+            .opacity(isFlipped ? 0 : 1) // 當翻轉時，隱藏正面內容
             .rotation3DEffect(
                 .degrees(isFlipped ? 180 : 0),
                 axis: (x: 0, y: 1, z: 0)
@@ -131,7 +135,7 @@ struct StoreCard: View {
             .background(Color.white)
             .cornerRadius(20)
             .shadow(radius: 10)
-            .opacity(isFlipped ? 1 : 0)
+            .opacity(isFlipped ? 1 : 0) // 當翻轉時，顯示背面內容
             .rotation3DEffect(
                 .degrees(isFlipped ? 0 : -180),
                 axis: (x: 0, y: 1, z: 0)
@@ -146,7 +150,14 @@ struct StoreCard: View {
 }
 
 
+// 定義 Store 結構
+struct Store: Identifiable {
+    let id = UUID()
+    let name: String
+    let description: String
+}
 
+// CSV 讀取功能
 func loadStoresFromCSV() -> [Store] {
     var stores: [Store] = []
     
