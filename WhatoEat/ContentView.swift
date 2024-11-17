@@ -16,8 +16,8 @@ struct Store: Identifiable {
 
 struct ContentView: View {
     @State private var stores: [Store] = []
-    @State private var selectedIndex: Int = 0
-    @State private var isRandomizing: Bool = false
+    @State private var selectedIndex: Int = 0 // 目前顯示的卡片索引
+    @State private var isRandomizing: Bool = false // 控制隨機動畫
 
     var body: some View {
         VStack {
@@ -46,8 +46,7 @@ struct ContentView: View {
                         .shadow(radius: 5)
                 }
                 .padding(.top, 20)
-                .disabled(isRandomizing)
-                Spacer()
+                .disabled(isRandomizing) // 當動畫進行時禁用按鈕
             }
         }
         .padding()
@@ -56,10 +55,11 @@ struct ContentView: View {
         }
     }
 
+    /// 隨機選擇一張名片
     private func randomizeCard() {
         guard !stores.isEmpty else { return }
         isRandomizing = true
-        let totalSteps = 6
+        let totalSteps = 6 // 定義動畫步數
         var step = 0
         
         Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in
@@ -74,29 +74,58 @@ struct ContentView: View {
     }
 }
 
+// 卡片 View
 struct StoreCard: View {
     let store: Store
+    @State private var isFlipped: Bool = false
 
     var body: some View {
-        VStack {
-            Text(store.name)
-                .font(.title)
-                .bold()
-                .padding(.bottom, 10)
+        ZStack {
+            // 正面
+            VStack {
+                Text(store.name)
+                    .font(.title)
+                    .bold()
+                    .multilineTextAlignment(.center)
+            }
+            .frame(width: 300, height: 300)
+            .background(Color.white)
+            .cornerRadius(20)
+            .shadow(radius: 10)
+            .opacity(isFlipped ? 0 : 1) // 當翻轉時，隱藏正面內容
+            .rotation3DEffect(
+                .degrees(isFlipped ? 180 : 0),
+                axis: (x: 0, y: 1, z: 0)
+            )
 
-            Text(store.description)
-                .font(.body)
-                .multilineTextAlignment(.center)
-                .padding()
+            // 背面
+            VStack {
+                Text(store.description)
+                    .font(.body)
+                    .multilineTextAlignment(.center)
+                    .padding()
+            }
+            .frame(width: 300, height: 300)
+            .background(Color.white)
+            .cornerRadius(20)
+            .shadow(radius: 10)
+            .opacity(isFlipped ? 1 : 0) // 當翻轉時，顯示背面內容
+            .rotation3DEffect(
+                .degrees(isFlipped ? 0 : -180),
+                axis: (x: 0, y: 1, z: 0)
+            )
         }
-        .frame(width: 300, height: 300)
-        .background(Color.white)
-        .cornerRadius(20)
-        .shadow(radius: 10)
-        .padding()
+        .onTapGesture {
+            withAnimation(.easeInOut(duration: 0.5)) {
+                isFlipped.toggle()
+            }
+        }
     }
 }
 
+
+
+// CSV 讀取與解析函式
 func loadStoresFromCSV() -> [Store] {
     var stores: [Store] = []
     
@@ -125,6 +154,7 @@ func loadStoresFromCSV() -> [Store] {
     return stores
 }
 
+// 處理 CSV 行，考慮到可能的逗號在引號內
 func splitCSVLine(line: String) -> [String] {
     var result: [String] = []
     var current = ""
