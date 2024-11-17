@@ -7,7 +7,6 @@
 
 import SwiftUI
 
-// 資料模型
 struct Store: Identifiable {
     let id = UUID()
     let name: String
@@ -16,8 +15,8 @@ struct Store: Identifiable {
 
 struct ContentView: View {
     @State private var stores: [Store] = []
-    @State private var selectedIndex: Int = 0 // 目前顯示的卡片索引
-    @State private var isRandomizing: Bool = false // 控制隨機動畫
+    @State private var selectedIndex: Int = 1
+    @State private var isRandomizing: Bool = false
 
     var body: some View {
         VStack {
@@ -27,14 +26,18 @@ struct ContentView: View {
                     .padding()
             } else {
                 TabView(selection: $selectedIndex) {
-                    ForEach(stores.indices, id: \.self) { index in
+                    ForEach(0..<stores.count, id: \.self) { index in
                         StoreCard(store: stores[index])
                             .tag(index)
+                            .frame(width: 300, height: 300)
                     }
                 }
                 .tabViewStyle(PageTabViewStyle())
-                .animation(.easeInOut(duration: 0.5), value: selectedIndex) // 添加滑動動畫
-                
+                .animation(.easeInOut(duration: 0.5), value: selectedIndex)
+                .onChange(of: selectedIndex) {
+                    handleInfiniteScrolling(for: selectedIndex)
+                }
+
                 Button(action: randomizeCard) {
                     Text("隨機選一個")
                         .font(.headline)
@@ -46,16 +49,36 @@ struct ContentView: View {
                         .shadow(radius: 5)
                 }
                 .padding(.top, 20)
-                .disabled(isRandomizing) // 當動畫進行時禁用按鈕
+                .disabled(isRandomizing)
             }
         }
         .padding()
         .onAppear {
-            self.stores = loadStoresFromCSV()
+            self.stores = createInfiniteStores(from: loadStoresFromCSV())
         }
     }
 
-    /// 隨機選擇一張名片
+    private func handleInfiniteScrolling(for index: Int) {
+        if index == 0 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                selectedIndex = stores.count - 2
+            }
+        } else if index == stores.count - 1 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                selectedIndex = 1
+            }
+        }
+    }
+
+
+    private func createInfiniteStores(from originalStores: [Store]) -> [Store] {
+        guard !originalStores.isEmpty else { return [] }
+        var infiniteStores = originalStores
+        infiniteStores.insert(originalStores.last!, at: 0)
+        infiniteStores.append(originalStores.first!)
+        return infiniteStores
+    }
+
     private func randomizeCard() {
         guard !stores.isEmpty else { return }
         isRandomizing = true
@@ -64,7 +87,7 @@ struct ContentView: View {
         
         Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in
             if step < totalSteps {
-                selectedIndex = Int.random(in: 0..<stores.count)
+                selectedIndex = Int.random(in: 1..<(stores.count - 1))
                 step += 1
             } else {
                 timer.invalidate()
@@ -74,14 +97,13 @@ struct ContentView: View {
     }
 }
 
-// 卡片 View
+
 struct StoreCard: View {
     let store: Store
     @State private var isFlipped: Bool = false
 
     var body: some View {
         ZStack {
-            // 正面
             VStack {
                 Text(store.name)
                     .font(.title)
@@ -92,7 +114,7 @@ struct StoreCard: View {
             .background(Color.white)
             .cornerRadius(20)
             .shadow(radius: 10)
-            .opacity(isFlipped ? 0 : 1) // 當翻轉時，隱藏正面內容
+            .opacity(isFlipped ? 0 : 1)
             .rotation3DEffect(
                 .degrees(isFlipped ? 180 : 0),
                 axis: (x: 0, y: 1, z: 0)
@@ -109,7 +131,7 @@ struct StoreCard: View {
             .background(Color.white)
             .cornerRadius(20)
             .shadow(radius: 10)
-            .opacity(isFlipped ? 1 : 0) // 當翻轉時，顯示背面內容
+            .opacity(isFlipped ? 1 : 0)
             .rotation3DEffect(
                 .degrees(isFlipped ? 0 : -180),
                 axis: (x: 0, y: 1, z: 0)
@@ -125,7 +147,6 @@ struct StoreCard: View {
 
 
 
-// CSV 讀取與解析函式
 func loadStoresFromCSV() -> [Store] {
     var stores: [Store] = []
     
