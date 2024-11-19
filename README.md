@@ -1,5 +1,5 @@
 # WhatoEat
-![WhatoEatIcon](https://github.com/rayhuang2006/WhatoEat/blob/main/WhatoEat/Assets.xcassets/AppIcon.appiconset/WhatoEat_Icon.png=400*400)
+![WhatoEatIcon](https://github.com/rayhuang2006/WhatoEat/blob/main/WhatoEat/Assets.xcassets/AppIcon.appiconset/WhatoEat_Icon.png)
 
 It is a ios application that can help you choose the food from the supper-street behind NCU.
 
