@@ -11,9 +11,11 @@ struct ContentView: View {
     @State private var stores: [Store] = []
     @State private var selectedIndex: Int = 1
     @State private var isRandomizing: Bool = false
+    @State private var location: String = "後門" // 預設顯示後門
 
     var body: some View {
         VStack {
+
             if stores.isEmpty {
                 Text("載入中...")
                     .font(.headline)
@@ -30,6 +32,17 @@ struct ContentView: View {
                 .onChange(of: selectedIndex) {
                     handleInfiniteScrolling()
                 }
+                Button(action: toggleLocation) {
+                    Text(location)
+                        .font(.headline)
+                        .padding()
+                        .frame(width: 200, height: 50)
+                        .background(Color.gray.opacity(0.8))
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                        .shadow(radius: 5)
+                }
+                .padding(.bottom, 5)
 
                 Button(action: randomizeCard) {
                     Text("開始抽一家店")
@@ -47,10 +60,11 @@ struct ContentView: View {
         }
         .padding()
         .onAppear {
-            self.stores = createInfiniteStores(from: loadStoresFromCSV())
+            self.stores = createInfiniteStores(from: loadStoresFromCSV(fileName: "information"))
         }
     }
 
+    /// 處理無限滑動
     private func handleInfiniteScrolling() {
         if !isRandomizing {
             if selectedIndex == 0 {
@@ -69,7 +83,7 @@ struct ContentView: View {
         }
     }
 
-
+    /// 創建無限循環的數據列表
     private func createInfiniteStores(from originalStores: [Store]) -> [Store] {
         guard !originalStores.isEmpty else { return [] }
         var infiniteStores = originalStores
@@ -78,7 +92,7 @@ struct ContentView: View {
         return infiniteStores
     }
 
-
+    /// 隨機選擇一張名片
     private func randomizeCard() {
         guard !stores.isEmpty else { return }
         isRandomizing = true
@@ -97,8 +111,18 @@ struct ContentView: View {
             }
         }
     }
-}
 
+    /// 切換數據來源
+    private func toggleLocation() {
+        // 切換地點名稱
+        location = (location == "後門") ? "宵夜街" : "後門"
+        // 根據當前地點讀取對應的數據
+        let fileName = (location == "後門") ? "back_door" : "information"
+        stores = createInfiniteStores(from: loadStoresFromCSV(fileName: fileName))
+        // 重設選中的索引
+        selectedIndex = 1
+    }
+}
 
 struct StoreCard: View {
     let store: Store
@@ -121,7 +145,6 @@ struct StoreCard: View {
                 .degrees(isFlipped ? 180 : 0),
                 axis: (x: 0, y: 1, z: 0)
             )
-
 
             VStack {
                 Text(store.description)
@@ -147,20 +170,18 @@ struct StoreCard: View {
     }
 }
 
-
-
 struct Store: Identifiable {
     let id = UUID()
     let name: String
     let description: String
 }
 
-
-func loadStoresFromCSV() -> [Store] {
+/// CSV 讀取功能
+func loadStoresFromCSV(fileName: String) -> [Store] {
     var stores: [Store] = []
     
-    guard let filePath = Bundle.main.path(forResource: "information", ofType: "csv") else {
-        print("無法找到 information.csv 檔案")
+    guard let filePath = Bundle.main.path(forResource: fileName, ofType: "csv") else {
+        print("無法找到 \(fileName).csv 檔案")
         return stores
     }
     
@@ -178,13 +199,13 @@ func loadStoresFromCSV() -> [Store] {
             }
         }
     } catch {
-        print("讀取 information.csv 時出錯: \(error)")
+        print("讀取 \(fileName).csv 時出錯: \(error)")
     }
     
     return stores
 }
 
-
+/// 處理 CSV 行
 func splitCSVLine(line: String) -> [String] {
     var result: [String] = []
     var current = ""
