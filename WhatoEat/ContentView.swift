@@ -32,6 +32,7 @@ struct ContentView: View {
                 .onChange(of: selectedIndex) {
                     handleInfiniteScrolling()
                 }
+
                 Button(action: toggleLocation) {
                     Text(location)
                         .font(.headline)
@@ -60,7 +61,7 @@ struct ContentView: View {
         }
         .padding()
         .onAppear {
-            self.stores = createInfiniteStores(from: loadStoresFromCSV(fileName: "information"))
+            self.stores = createInfiniteStores(from: loadStoresFromJSON(fileName: "supperStreet"))
         }
     }
 
@@ -117,8 +118,8 @@ struct ContentView: View {
         // 切換地點名稱
         location = (location == "後門") ? "宵夜街" : "後門"
         // 根據當前地點讀取對應的數據
-        let fileName = (location == "後門") ? "back_door" : "information"
-        stores = createInfiniteStores(from: loadStoresFromCSV(fileName: fileName))
+        let fileName = (location == "後門") ? "backDoor" : "supperStreet"
+        stores = createInfiniteStores(from: loadStoresFromJSON(fileName: fileName))
         // 重設選中的索引
         selectedIndex = 1
     }
@@ -170,59 +171,41 @@ struct StoreCard: View {
     }
 }
 
-struct Store: Identifiable {
+struct Store: Identifiable, Decodable {
     let id = UUID()
     let name: String
     let description: String
+    let filename: String
+    let x: Double
+    let y: Double
+    let hours: [String: String]
+    
+    private enum CodingKeys: String, CodingKey {
+        case name = "stores"
+        case description
+        case filename
+        case x
+        case y
+        case hours
+    }
 }
 
-/// CSV 讀取功能
-func loadStoresFromCSV(fileName: String) -> [Store] {
-    var stores: [Store] = []
-    
-    guard let filePath = Bundle.main.path(forResource: fileName, ofType: "csv") else {
-        print("無法找到 \(fileName).csv 檔案")
-        return stores
+/// 讀取 JSON 檔案
+func loadStoresFromJSON(fileName: String) -> [Store] {
+    guard let filePath = Bundle.main.path(forResource: fileName, ofType: "json") else {
+        print("無法找到 \(fileName).json 檔案")
+        return []
     }
     
     do {
-        let content = try String(contentsOfFile: filePath, encoding: .utf8)
-        let lines = content.components(separatedBy: .newlines)
-        
-        for line in lines {
-            if line.trimmingCharacters(in: .whitespaces).isEmpty { continue }
-            let components = splitCSVLine(line: line)
-            if components.count >= 2 {
-                let name = components[0].trimmingCharacters(in: .whitespacesAndNewlines)
-                let description = components[1].trimmingCharacters(in: .whitespacesAndNewlines)
-                stores.append(Store(name: name, description: description))
-            }
-        }
+        let data = try Data(contentsOf: URL(fileURLWithPath: filePath))
+        let decoder = JSONDecoder()
+        let jsonObjects = try decoder.decode([Store].self, from: data)
+        return jsonObjects
     } catch {
-        print("讀取 \(fileName).csv 時出錯: \(error)")
+        print("讀取 \(fileName).json 時出錯: \(error)")
+        return []
     }
-    
-    return stores
-}
-
-/// 處理 CSV 行
-func splitCSVLine(line: String) -> [String] {
-    var result: [String] = []
-    var current = ""
-    var insideQuotes = false
-    
-    for char in line {
-        if char == "\"" {
-            insideQuotes.toggle()
-        } else if char == "," && !insideQuotes {
-            result.append(current)
-            current = ""
-        } else {
-            current.append(char)
-        }
-    }
-    result.append(current)
-    return result
 }
 
 struct ContentView_Previews: PreviewProvider {
