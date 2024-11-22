@@ -2,10 +2,10 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var stores: [Store] = []
-    @State private var isTextVisible: [Bool] = [] // 控制每張卡片的字樣顯示
+    @State private var isTextVisible: [Bool] = []
     @State private var selectedIndex: Int = 1
     @State private var isRandomizing: Bool = false
-    @State private var location: String = "後門" // 預設顯示後門
+    @State private var location: String = "宵夜街"
 
     var body: some View {
         VStack {
@@ -55,11 +55,11 @@ struct ContentView: View {
         .padding()
         .onAppear {
             self.stores = createInfiniteStores(from: loadStoresFromJSON(fileName: "supperStreet"))
-            self.isTextVisible = Array(repeating: true, count: stores.count) // 預設文字顯示
+            self.isTextVisible = Array(repeating: true, count: stores.count)
         }
     }
 
-    /// 處理無限滑動
+
     private func handleInfiniteScrolling() {
         if !isRandomizing {
             if selectedIndex == 0 {
@@ -78,7 +78,7 @@ struct ContentView: View {
         }
     }
 
-    /// 創建無限循環的數據列表
+
     private func createInfiniteStores(from originalStores: [Store]) -> [Store] {
         guard !originalStores.isEmpty else { return [] }
         var infiniteStores = originalStores
@@ -87,24 +87,24 @@ struct ContentView: View {
         return infiniteStores
     }
 
-    /// 隨機選擇一張卡片並隱藏/顯示文字
+
     private func randomizeCard() {
         guard !stores.isEmpty else { return }
         isRandomizing = true
 
-        let totalTime = Double.random(in: 8.0...10.0)
+        let totalTime = Double.random(in: 10.0...15.0)
         let finalIndex = Int.random(in: 1..<(stores.count - 1))
 
         var elapsedTime: Double = 0
-        var currentDelay: Double = 0.05
-        let maxDelay: Double = 0.7
+        var currentDelay: Double = 0.08
+        let maxDelay: Double = 2.5
 
-        // 隱藏所有卡片字樣
+
         withAnimation {
             isTextVisible = Array(repeating: false, count: stores.count)
         }
 
-        // 開始隨機抽卡的滑動
+
         Timer.scheduledTimer(withTimeInterval: currentDelay, repeats: true) { timer in
             elapsedTime += currentDelay
             withAnimation(.easeInOut(duration: currentDelay)) {
@@ -118,10 +118,9 @@ struct ContentView: View {
                     selectedIndex = finalIndex
                 }
 
-                // 延遲顯示文字
+
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     withAnimation(.easeInOut(duration: 1.0)) {
-                        // 顯示所有卡片的文字
                         for index in stores.indices {
                             isTextVisible[index] = true
                         }
@@ -133,12 +132,12 @@ struct ContentView: View {
         }
     }
 
-    /// 切換數據來源
+
     private func toggleLocation() {
         location = (location == "後門") ? "宵夜街" : "後門"
         let fileName = (location == "後門") ? "backDoor" : "supperStreet"
         stores = createInfiniteStores(from: loadStoresFromJSON(fileName: fileName))
-        isTextVisible = Array(repeating: true, count: stores.count) // 預設所有文字顯示
+        isTextVisible = Array(repeating: true, count: stores.count)
         selectedIndex = 1
     }
 }
@@ -146,11 +145,10 @@ struct ContentView: View {
 struct StoreCard: View {
     let store: Store
     @Binding var isTextVisible: Bool
-    @State private var isFlipped: Bool = false // 單純處理卡片翻轉
+    @State private var isFlipped: Bool = false
 
     var body: some View {
         ZStack {
-            // 卡片正面和反面
             VStack {
                 if !isFlipped {
                     Text(store.name)
@@ -158,7 +156,7 @@ struct StoreCard: View {
                         .bold()
                         .multilineTextAlignment(.center)
                         .padding()
-                        .opacity(isTextVisible ? 1 : 0) // 顯示文字或隱藏
+                        .opacity(isTextVisible ? 1 : 0)
                 }
             }
             .frame(width: 300, height: 300)
@@ -168,7 +166,6 @@ struct StoreCard: View {
             .opacity(isFlipped ? 0 : 1)
             .rotation3DEffect(.degrees(isFlipped ? 180 : 0), axis: (x: 0, y: 1, z: 0))
 
-            // 反面
             VStack {
                 if isFlipped {
                     Text(store.description)
@@ -185,7 +182,7 @@ struct StoreCard: View {
             .rotation3DEffect(.degrees(isFlipped ? 0 : -180), axis: (x: 0, y: 1, z: 0))
         }
         .onTapGesture {
-            withAnimation(.easeInOut(duration: 0.5)) {
+            withAnimation(.easeInOut(duration: 0.8)) {
                 isFlipped.toggle()
             }
         }
@@ -211,7 +208,6 @@ struct Store: Identifiable, Decodable {
     }
 }
 
-/// 讀取 JSON 檔案
 func loadStoresFromJSON(fileName: String) -> [Store] {
     guard let filePath = Bundle.main.path(forResource: fileName, ofType: "json") else {
         print("無法找到 \(fileName).json 檔案")
