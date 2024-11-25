@@ -1,3 +1,10 @@
+//
+//  ContentView.swift
+//  WhatoEat
+//  Version 2.0
+//
+//  Created by Ray Huang on 2024/11/17.
+//
 import SwiftUI
 
 struct ContentView: View {
@@ -6,26 +13,35 @@ struct ContentView: View {
     @State private var selectedIndex: Int = 1
     @State private var isRandomizing: Bool = false
     @State private var location: String = "宵夜街"
+    @State private var isMapVisible: Bool = false
 
     var body: some View {
-        VStack {
-            if stores.isEmpty {
-                Text("載入中...")
-                    .font(.headline)
-                    .padding()
-            } else {
-                TabView(selection: $selectedIndex) {
-                    ForEach(0..<stores.count, id: \.self) { index in
-                        StoreCard(store: stores[index], isTextVisible: $isTextVisible[index])
-                            .tag(index)
-                            .frame(width: 300, height: 300)
+        HStack {
+            // 左邊：卡片瀏覽區
+            VStack {
+                if stores.isEmpty {
+                    Text("載入中...")
+                        .font(.headline)
+                        .padding()
+                } else {
+                    TabView(selection: $selectedIndex) {
+                        ForEach(0..<stores.count, id: \.self) { index in
+                            StoreCard(store: stores[index], isTextVisible: $isTextVisible[index])
+                                .tag(index)
+                                .frame(width: 300, height: 300)
+                        }
+                    }
+                    .tabViewStyle(PageTabViewStyle())
+                    .onChange(of: selectedIndex) {
+                        handleInfiniteScrolling()
                     }
                 }
-                .tabViewStyle(PageTabViewStyle())
-                .onChange(of: selectedIndex) {
-                    handleInfiniteScrolling()
-                }
+            }
+            .frame(maxWidth: .infinity)
 
+            // 右邊：功能按鈕區
+            VStack(spacing: 20) {
+                // 切換地點按鈕
                 Button(action: toggleLocation) {
                     Text(location)
                         .font(.headline)
@@ -36,8 +52,8 @@ struct ContentView: View {
                         .cornerRadius(10)
                         .shadow(radius: 5)
                 }
-                .padding(.bottom, 5)
 
+                // 隨機選擇卡片按鈕
                 Button(action: randomizeCard) {
                     Text("開始抽一家店")
                         .font(.headline)
@@ -48,9 +64,26 @@ struct ContentView: View {
                         .cornerRadius(10)
                         .shadow(radius: 5)
                 }
-                .padding(.top, 20)
                 .disabled(isRandomizing)
+
+                // 查看地圖按鈕
+                Button(action: {
+                    isMapVisible.toggle()
+                }) {
+                    Text("查看地圖")
+                        .font(.headline)
+                        .padding()
+                        .frame(width: 200, height: 50)
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                        .shadow(radius: 5)
+                }
+                .sheet(isPresented: $isMapVisible) {
+                    MapView(location: location, isMapVisible: $isMapVisible)
+                }
             }
+            .frame(maxWidth: 300)
         }
         .padding()
         .onAppear {
@@ -59,7 +92,7 @@ struct ContentView: View {
         }
     }
 
-
+    // 處理無限滾動
     private func handleInfiniteScrolling() {
         if !isRandomizing {
             if selectedIndex == 0 {
@@ -78,7 +111,7 @@ struct ContentView: View {
         }
     }
 
-
+    // 創建無限滾動數據
     private func createInfiniteStores(from originalStores: [Store]) -> [Store] {
         guard !originalStores.isEmpty else { return [] }
         var infiniteStores = originalStores
@@ -87,7 +120,7 @@ struct ContentView: View {
         return infiniteStores
     }
 
-
+    // 隨機選擇卡片
     private func randomizeCard() {
         guard !stores.isEmpty else { return }
         isRandomizing = true
@@ -99,11 +132,10 @@ struct ContentView: View {
         var currentDelay: Double = 0.08
         let maxDelay: Double = 2.5
 
-
+        // 隱藏所有卡片文字
         withAnimation {
             isTextVisible = Array(repeating: false, count: stores.count)
         }
-
 
         Timer.scheduledTimer(withTimeInterval: currentDelay, repeats: true) { timer in
             elapsedTime += currentDelay
@@ -118,12 +150,10 @@ struct ContentView: View {
                     selectedIndex = finalIndex
                 }
 
-
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    // 顯示選中卡片的文字
                     withAnimation(.easeInOut(duration: 1.0)) {
-                        for index in stores.indices {
-                            isTextVisible[index] = true
-                        }
+                        isTextVisible[finalIndex] = true
                     }
                 }
 
@@ -132,7 +162,7 @@ struct ContentView: View {
         }
     }
 
-
+    // 切換地點並加載相應數據
     private func toggleLocation() {
         location = (location == "後門") ? "宵夜街" : "後門"
         let fileName = (location == "後門") ? "backDoor" : "supperStreet"
@@ -142,6 +172,30 @@ struct ContentView: View {
     }
 }
 
+// 地圖視圖
+struct MapView: View {
+    let location: String
+    @Binding var isMapVisible: Bool
+
+    var body: some View {
+        VStack {
+            Text(location == "後門" ? "後門地圖" : "宵夜街地圖")
+                .font(.headline)
+                .padding()
+            Image(location == "後門" ? "back_door_map" : "supper_street_map")
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .padding()
+        .onTapGesture {
+            // 點擊地圖隱藏地圖
+            isMapVisible = false
+        }
+    }
+}
+
+// 卡片視圖
 struct StoreCard: View {
     let store: Store
     @Binding var isTextVisible: Bool
@@ -150,45 +204,48 @@ struct StoreCard: View {
     var body: some View {
         ZStack {
             VStack {
-                if !isFlipped {
-                    Text(store.name)
-                        .font(.title)
-                        .bold()
-                        .multilineTextAlignment(.center)
-                        .padding()
-                        .opacity(isTextVisible ? 1 : 0)
-                }
+                Text(store.name)
+                    .font(.title)
+                    .bold()
+                    .multilineTextAlignment(.center)
+                    .opacity(isTextVisible ? 1 : 0) // 控制文字顯示
             }
             .frame(width: 300, height: 300)
             .background(Color.white)
             .cornerRadius(20)
             .shadow(radius: 10)
             .opacity(isFlipped ? 0 : 1)
-            .rotation3DEffect(.degrees(isFlipped ? 180 : 0), axis: (x: 0, y: 1, z: 0))
+            .rotation3DEffect(
+                .degrees(isFlipped ? 180 : 0),
+                axis: (x: 0, y: 1, z: 0)
+            )
 
             VStack {
-                if isFlipped {
-                    Text(store.description)
-                        .font(.body)
-                        .multilineTextAlignment(.center)
-                        .padding()
-                }
+                Text(store.description)
+                    .font(.body)
+                    .multilineTextAlignment(.center)
+                    .padding()
+                    .opacity(isTextVisible ? 1 : 0) // 控制文字顯示
             }
             .frame(width: 300, height: 300)
             .background(Color.white)
             .cornerRadius(20)
             .shadow(radius: 10)
             .opacity(isFlipped ? 1 : 0)
-            .rotation3DEffect(.degrees(isFlipped ? 0 : -180), axis: (x: 0, y: 1, z: 0))
+            .rotation3DEffect(
+                .degrees(isFlipped ? 0 : -180),
+                axis: (x: 0, y: 1, z: 0)
+            )
         }
         .onTapGesture {
-            withAnimation(.easeInOut(duration: 0.8)) {
+            withAnimation(.easeInOut(duration: 0.5)) {
                 isFlipped.toggle()
             }
         }
     }
 }
 
+// 數據模型
 struct Store: Identifiable, Decodable {
     let id = UUID()
     let name: String
@@ -208,6 +265,7 @@ struct Store: Identifiable, Decodable {
     }
 }
 
+// 加載 JSON 數據
 func loadStoresFromJSON(fileName: String) -> [Store] {
     guard let filePath = Bundle.main.path(forResource: fileName, ofType: "json") else {
         print("無法找到 \(fileName).json 檔案")
