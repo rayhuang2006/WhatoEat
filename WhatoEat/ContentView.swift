@@ -1,7 +1,7 @@
 //
 //  ContentView.swift
 //  WhatoEat
-//  Version 2.0
+//  Version 2.0.1
 //
 //  Created by Ray Huang on 2024/11/17.
 //
@@ -172,78 +172,7 @@ struct ContentView: View {
     }
 }
 
-// 地圖視圖
-struct MapView: View {
-    let location: String
-    @Binding var isMapVisible: Bool
 
-    var body: some View {
-        VStack {
-            Text(location == "後門" ? "後門地圖" : "宵夜街地圖")
-                .font(.headline)
-                .padding()
-            Image(location == "後門" ? "back_door_map" : "supper_street_map")
-                .resizable()
-                .scaledToFit()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .padding()
-        .onTapGesture {
-            // 點擊地圖隱藏地圖
-            isMapVisible = false
-        }
-    }
-}
-
-// 卡片視圖
-struct StoreCard: View {
-    let store: Store
-    @Binding var isTextVisible: Bool
-    @State private var isFlipped: Bool = false
-
-    var body: some View {
-        ZStack {
-            VStack {
-                Text(store.name)
-                    .font(.title)
-                    .bold()
-                    .multilineTextAlignment(.center)
-                    .opacity(isTextVisible ? 1 : 0) // 控制文字顯示
-            }
-            .frame(width: 300, height: 300)
-            .background(Color.white)
-            .cornerRadius(20)
-            .shadow(radius: 10)
-            .opacity(isFlipped ? 0 : 1)
-            .rotation3DEffect(
-                .degrees(isFlipped ? 180 : 0),
-                axis: (x: 0, y: 1, z: 0)
-            )
-
-            VStack {
-                Text(store.description)
-                    .font(.body)
-                    .multilineTextAlignment(.center)
-                    .padding()
-                    .opacity(isTextVisible ? 1 : 0) // 控制文字顯示
-            }
-            .frame(width: 300, height: 300)
-            .background(Color.white)
-            .cornerRadius(20)
-            .shadow(radius: 10)
-            .opacity(isFlipped ? 1 : 0)
-            .rotation3DEffect(
-                .degrees(isFlipped ? 0 : -180),
-                axis: (x: 0, y: 1, z: 0)
-            )
-        }
-        .onTapGesture {
-            withAnimation(.easeInOut(duration: 0.5)) {
-                isFlipped.toggle()
-            }
-        }
-    }
-}
 
 // 數據模型
 struct Store: Identifiable, Decodable {

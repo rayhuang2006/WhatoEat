@@ -1,6 +1,7 @@
 //
 //  WhatoEatApp.swift
 //  WhatoEat
+//  Version 2.0.1
 //
 //  Created by Ray Huang on 2024/11/17.
 //
