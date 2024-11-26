@@ -5,6 +5,7 @@
 //
 //  Created by Ray Huang on 2024/11/25.
 //
+
 import SwiftUI
 
 struct MapView: View {
@@ -23,8 +24,8 @@ struct MapView: View {
         }
         .padding()
         .onTapGesture {
-            // 點擊地圖隱藏地圖
             isMapVisible = false
         }
     }
 }
+

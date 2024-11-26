@@ -17,7 +17,6 @@ struct ContentView: View {
 
     var body: some View {
         HStack {
-            // 左邊：卡片瀏覽區
             VStack {
                 if stores.isEmpty {
                     Text("載入中...")
@@ -39,9 +38,7 @@ struct ContentView: View {
             }
             .frame(maxWidth: .infinity)
 
-            // 右邊：功能按鈕區
             VStack(spacing: 20) {
-                // 切換地點按鈕
                 Button(action: toggleLocation) {
                     Text(location)
                         .font(.headline)
@@ -53,7 +50,6 @@ struct ContentView: View {
                         .shadow(radius: 5)
                 }
 
-                // 隨機選擇卡片按鈕
                 Button(action: randomizeCard) {
                     Text("開始抽一家店")
                         .font(.headline)
@@ -66,7 +62,6 @@ struct ContentView: View {
                 }
                 .disabled(isRandomizing)
 
-                // 查看地圖按鈕
                 Button(action: {
                     isMapVisible.toggle()
                 }) {
@@ -92,7 +87,6 @@ struct ContentView: View {
         }
     }
 
-    // 處理無限滾動
     private func handleInfiniteScrolling() {
         if !isRandomizing {
             if selectedIndex == 0 {
@@ -111,7 +105,6 @@ struct ContentView: View {
         }
     }
 
-    // 創建無限滾動數據
     private func createInfiniteStores(from originalStores: [Store]) -> [Store] {
         guard !originalStores.isEmpty else { return [] }
         var infiniteStores = originalStores
@@ -120,7 +113,6 @@ struct ContentView: View {
         return infiniteStores
     }
 
-    // 隨機選擇卡片
     private func randomizeCard() {
         guard !stores.isEmpty else { return }
         isRandomizing = true
@@ -132,7 +124,6 @@ struct ContentView: View {
         var currentDelay: Double = 0.08
         let maxDelay: Double = 2.5
 
-        // 隱藏所有卡片文字
         withAnimation {
             isTextVisible = Array(repeating: false, count: stores.count)
         }
@@ -151,7 +142,6 @@ struct ContentView: View {
                 }
 
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    // 顯示選中卡片的文字
                     withAnimation(.easeInOut(duration: 1.0)) {
                         isTextVisible[finalIndex] = true
                     }
@@ -162,7 +152,6 @@ struct ContentView: View {
         }
     }
 
-    // 切換地點並加載相應數據
     private func toggleLocation() {
         location = (location == "後門") ? "宵夜街" : "後門"
         let fileName = (location == "後門") ? "backDoor" : "supperStreet"
@@ -174,7 +163,6 @@ struct ContentView: View {
 
 
 
-// 數據模型
 struct Store: Identifiable, Decodable {
     let id = UUID()
     let name: String
@@ -194,7 +182,6 @@ struct Store: Identifiable, Decodable {
     }
 }
 
-// 加載 JSON 數據
 func loadStoresFromJSON(fileName: String) -> [Store] {
     guard let filePath = Bundle.main.path(forResource: fileName, ofType: "json") else {
         print("無法找到 \(fileName).json 檔案")

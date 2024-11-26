@@ -1,5 +1,5 @@
 //
-//  St.swift
+//  StoreCard.swift
 //  WhatoEat
 //  Version 2.0.1
 //
@@ -20,7 +20,7 @@ struct StoreCard: View {
                     .font(.title)
                     .bold()
                     .multilineTextAlignment(.center)
-                    .opacity(isTextVisible ? 1 : 0) // 控制文字顯示
+                    .opacity(isTextVisible ? 1 : 0)
             }
             .frame(width: 300, height: 300)
             .background(Color.white)
@@ -37,7 +37,7 @@ struct StoreCard: View {
                     .font(.body)
                     .multilineTextAlignment(.center)
                     .padding()
-                    .opacity(isTextVisible ? 1 : 0) // 控制文字顯示
+                    .opacity(isTextVisible ? 1 : 0) 
             }
             .frame(width: 300, height: 300)
             .background(Color.white)
